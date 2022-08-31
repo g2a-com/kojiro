@@ -1,59 +1,45 @@
-# Jira-versioner
-Base on commit messages and tags you can now create versions in Jira. 
+# Kojirō
+
+It is a [Klio](https://github.com/g2a-com/klio) compliant application for creating jira releases based on git commit history.
+Based on a given tag (must be semver) kojiro looks for a previous tag in commit history.
+It browses all the commit messages in-between trying to find jira issues (e.g. *ABC-123*).
+Then, it takes all those issues and puts them in a new release named after the given version.
+
+Idea and application is based (and forked from) [jira-versioner](https://github.com/psmarcin/jira-versioner) 
 
 ## Getting Started
 
-These instructions will show you how to use jira-versioner in simple steps.
+> IMPORTANT!
+> Kojiro works only with Jira Server instances. It does not work with Jira Cloud.
 
 ### Prerequisites
 
 Things that you need to have before we start:
 
-* Jira service
-* Jira project
-* Jira email and token with rights to write to Jira project
+* Jira project code that a release will be created in
+* Jira user (as an email) with rights to write to Jira project
+* A password for given user (only for application users)
 * Git repository
 * At least two Git tags in rage
 
-### Tools
-1. Lint: https://golangci-lint.run/usage/quick-start/
-
-### Scripts
-1. Lint: `make lint`
-1. Lint with autofix: `make lint-fix`
-
 ### Installing
 
-Just grab one file from download page: https://github.com/psmarcin/jira-versioner/releases/latest.
 
-## Examples 
 
+## Usage
+
+To check current usage of the command simply type:
 ```console
-jira-versioner -e jira@example.com -k SOME_TOKEN -p 10003 -v v1.1.0 -t v1.1.0 -u https://example.atlassian.net
+klio kojiro --help
 ```
 
-Help: 
+### Example
+
 ```console
-Usage:
-  jira-versioner [flags]
-
-Examples:
-jira-versioner -e jira@example.com -k SOME_TOKEN -p 10003 -v v1.1.0 -t v1.1.0 -u https://example.atlassian.net
-
-Flags:
-  -d, --dir string             Absolute directory path to git repository (default "/Users/psmarcin/projects/jira-releaser")
-  -h, --help                   help for jira-versioner
-  -u, --jira-base-url string   Jira service base url, example: https://example.atlassian.net
-  -e, --jira-email string      Jira email
-  -p, --jira-project string    Jira project, it has to be ID, example: 10003
-  -k, --jira-token string      Jira token/key
-  -v, --jira-version string    Version name for Jira
-  -t, --tag string             Existing git tag
-
-required flag(s) "jira-base-url", "jira-email", "jira-project", "jira-token", "jira-version", "tag"
+klio kojiro -e jira@example.com -k SOME_TOKEN -p 10003 -v v1.1.0 -t v1.1.0 -u https://example.atlassian.net
 ```
 
-### How does it work
+### Explained more in depth
 
 Here is our git log history:
 
@@ -70,54 +56,54 @@ cb59ea7f0bc3efb8b92de87cd88b589024d18ee7 (tag: v1.1.0) feat: JR-40 argument to r
 2e6d61dee0c4ed3a0f7f887973dbc326a487675b (tag: v1.0.0) feat: github JR-1 release action
 ```
 
-For simplification in examples I omitted jira configs 
+> For simplification jira configs are omitted in the following examples 
 
-1. `jira-versioner -t v2.1.0`
+1. `klio kojiro -t v2.1.0`
     
     Found commits:
     1. `05e5705322cc2d9daf7fb376a8c5e9cbd039b257`
-    1. `9bf13576317845cd7d10980d62afe719872ceb01`
-    1. `831e4c253829dbc12683baa5b4d494aa3524f39f`
-    1. `533569497a68f04674e43e23d06fb9c1f0b3b958`
+    2. `9bf13576317845cd7d10980d62afe719872ceb01`
+    3. `831e4c253829dbc12683baa5b4d494aa3524f39f`
+    4. `533569497a68f04674e43e23d06fb9c1f0b3b958`
     
     Found tasks:
     1. `JR-4`
-    1. `JR-13`
-    1. `JR-2`
+    2. `JR-13`
+    3. `JR-2`
     
     Results: 
-    1. New version created(if not already exists) - `v2.1.0`
-    1. If task was found in commits and exists in Jira it will set fixed version for it
+    1. New Jira release created, if it doesn't exist already - `v2.1.0`.
+    2. If a task have been found in a commit messages, and it exists in Jira it is matched with the release.
     
-1. `jira-versioner -t v2.0.1`
+2. `klio kojiro -t v2.0.1`
     
     Found commits:
     1. `1e1dd3131aeed3611e70d5f329989c1a09371822`
-    1. `aeae65755553d03920d7cd7c4a5fdb40a02d7c57`
-    1. `e874a9c6162fd102b9de926397a855c1b0dbd880`
+    2. `aeae65755553d03920d7cd7c4a5fdb40a02d7c57`
+    3. `e874a9c6162fd102b9de926397a855c1b0dbd880`
     
     Found tasks:
     1. `JR-3`
-    1. `JR-2`
+    2. `JR-2`
     
     Results: 
-    1. New version created(if not already exists) - `v2.0.1`
-    1. If task was found in commits and exists in Jira it will set fixed version for it
-    1. Task from commits are always unique (no deuplicates)
+    1. New Jira release is created, if it doesn't exist already - `v2.0.1`.
+    2. If a task have been found in a commit messages, and it exists in Jira it is matched with the release.
+    3. Each task is matched exactly once with a release despite multiple occurrences in commit messages.
     
-1. `jira-versioner -t v2.0.0`
+3. `klio kojiro -t v2.0.0`
     
     Found commits:
     1. `d15916037b0a6ca04776e474ac461e767631c838`
     
     Found tasks:
-    none
+    *none*
     
     Results: 
-    1. New version created(if not already exists) - `v2.0.0`
-    1. No tasks found, no links = empty version
+    1. New Jira release is created, if it doesn't exist already - `v2.0.0`.
+    2. No tasks found means no links, means empty version is creates.
     
-1. `jira-versioner -t v1.1.0 -v 1000.000.000`
+4. `klio kojiro -t v1.1.0 -v 1000.000.000`
     
     Found commits:
     1. `cb59ea7f0bc3efb8b92de87cd88b589024d18ee7`
@@ -126,26 +112,23 @@ For simplification in examples I omitted jira configs
     1. `JR-40`
     
     Results: 
-    1. New version created(if not already exists) - `1000.000.000`
-    1. If task was found in commits and exists in Jira it will set fixed version for it
-    1. It looks for task id in whole commit message
+    1. New Jira release is created, if it doesn't exist already - `1000.000.000`
+    2. If task was found in commits and exists in Jira it will set fixed version for it
+    3. If a task have been found in a commit messages, and it exists in Jira it is matched with the release.
 
 
 ## Contributing
 
-TODO:
+### Linting
+Project uses golint-ci as an aggrated linter.
+You may find its configuration in [.golangci](https://github.com/g2a-com/kojiro/blob/master/.golangci.yaml) file
+1. Lint: `make lint`
+2. Lint with autofix: `make lint-fix`
 
-Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
+### Versioning
 
-## Versioning
-
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/psmarcin/jira-versioner/tags). 
-
-## Authors
-
-* **psmarcin** - [psmarcin](https://github.com/psmarcin)
-
-See also the list of [contributors](https://github.com/psmarcin/jira-versioner/contributors) who participated in this project.
+We use [SemVer](http://semver.org/) for versioning to comply with golang standards.
+For the versions available, see the [tags on this repository](https://github.com/g2a-com/kojiro/tags). 
 
 ## License
 

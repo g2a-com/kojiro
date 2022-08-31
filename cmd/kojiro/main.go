@@ -14,7 +14,7 @@ import (
 
 func main() {
 	rootCmd := &cobra.Command{
-		Use:   "jira-versioner",
+		Use:   "kojiro",
 		Short: "A simple version setter for Jira tasks since last version",
 		Long: `A solution for automatically create version, 
 link all issues from commits to newly created version. 
@@ -64,7 +64,7 @@ All automatically.`,
 		os.Exit(1)
 	}
 
-	rootCmd.Example = "jira-versioner -e jira@example.com -k pa$$wor0 -p 10003 -t v1.1.0 -u https://example.atlassian.net"
+	rootCmd.Example = "kojiro -e jira@example.com -k pa$$wor0 -p 10003 -t v1.1.0 -u https://example.atlassian.net"
 
 	if err = rootCmd.Execute(); err != nil {
 		fmt.Println(err)
