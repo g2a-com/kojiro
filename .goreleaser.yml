@@ -6,7 +6,7 @@ before:
 builds:
   - env:
       - CGO_ENABLED=0
-    main: ./cmd/jira-versioner/main.go
+    main: ./cmd/kojiro/main.go
     goos:
       - darwin
       - linux
