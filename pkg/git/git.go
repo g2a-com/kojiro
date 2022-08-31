@@ -7,20 +7,20 @@ import (
 	pslog "github.com/psmarcin/jira-versioner/pkg/log"
 )
 
-// Git keeps only dependencies
+// Git keeps only dependencies.
 type Git struct {
 	Path         string
 	Dependencies Getter
 	log          pslog.Logger
 }
 
-// Getter is interface for GetTasks dependencies for easier mocking
+// Getter is interface for GetTasks dependencies for easier mocking.
 type Getter interface {
 	GetCommits(string, string, string) ([]cmd.Commit, error)
 	GetPreviousTag(string, string) (string, error)
 }
 
-// New creates Git with default dependencies
+// New creates Git with default dependencies.
 func New(path string, log pslog.Logger) Git {
 	command := cmd.New(log)
 	return Git{
@@ -30,9 +30,9 @@ func New(path string, log pslog.Logger) Git {
 	}
 }
 
-// GetTasks gets list of Jira taskIDs from commits
+// GetTasks gets list of Jira taskIDs from commits.
 func (g *Git) GetTasks(tag string) ([]string, error) {
-	var taskMap = make(map[string]struct{})
+	taskMap := make(map[string]struct{})
 	var tasks []string
 
 	previousTag, err := g.Dependencies.GetPreviousTag(tag, g.Path)

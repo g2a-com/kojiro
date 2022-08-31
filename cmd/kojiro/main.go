@@ -9,8 +9,11 @@ import (
 	"github.com/psmarcin/jira-versioner/pkg/git"
 	"github.com/psmarcin/jira-versioner/pkg/jira"
 	"github.com/spf13/cobra"
+
 	"go.uber.org/zap"
 )
+
+const defaultRetries = 3
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -34,7 +37,7 @@ All automatically.`,
 	rootCmd.Flags().StringP("jira-token", "k", "", "Jira token/key/password")
 	rootCmd.Flags().StringP("jira-project", "p", "", "Jira project, it has to be ID, example: 10003")
 	rootCmd.Flags().StringP("jira-base-url", "u", "", "Jira service base url, example: https://example.atlassian.net")
-	rootCmd.Flags().IntP("jira-retry-times", "r", 3, "Jira retry times for HTTP requests if failed")
+	rootCmd.Flags().IntP("jira-retry-times", "r", defaultRetries, "Jira retry times for HTTP requests if failed")
 	rootCmd.Flags().StringP("dir", "d", pwd, "Absolute directory path to git repository")
 	_ = rootCmd.Flags().BoolP("dry-run", "", false, "Enable dry run mode")
 
@@ -128,7 +131,7 @@ func rootFunc(c *cobra.Command, _ []string) {
 		return
 	}
 
-	var jiraConfig = jira.Config{
+	jiraConfig := jira.Config{
 		Username:       jiraEmail,
 		Token:          jiraToken,
 		ProjectID:      jiraProject,

@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 )
 
-// retryPolicy implements CheckRetry interface to log more information about request fails
+// retryPolicy implements CheckRetry interface to log more information about request fails.
 func (j *Jira) retryPolicy(ctx context.Context, resp *http.Response, err error) (bool, error) {
 	shouldRetry, err := retryablehttp.DefaultRetryPolicy(ctx, resp, err)
 	if shouldRetry {

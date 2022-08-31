@@ -6,6 +6,7 @@ import (
 	"github.com/psmarcin/jira-versioner/pkg/cmd"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+
 	"go.uber.org/zap"
 )
 
@@ -55,7 +56,7 @@ func TestGit_GetTasks_ReturnTaskIDsFromCommitMessage(t *testing.T) {
 	assert.Contains(t, got, "JIR-123")
 }
 
-// nolint:dupl // omit dupl because it's almost the same codes
+//nolint:dupl // omit dupl because it's almost the same codes
 func TestGit_GetTasks_ReturnTaskIDsFromCommitMessageOmitCommitsWithoutTaskID(t *testing.T) {
 	log := zap.NewExample().Sugar()
 
@@ -86,7 +87,7 @@ func TestGit_GetTasks_ReturnTaskIDsFromCommitMessageOmitCommitsWithoutTaskID(t *
 	assert.Contains(t, got, "JIR-123")
 }
 
-// nolint:dupl // omit dupl because it's almost the same code
+//nolint:dupl // omit dupl because it's almost the same code
 func TestGit_GetTasks_ReturnTaskIDsFromCommitMessageOmitDuplicatedTaskIDs(t *testing.T) {
 	log := zap.NewExample().Sugar()
 

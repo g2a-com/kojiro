@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
 	"go.uber.org/zap"
 )
 
@@ -114,7 +115,7 @@ func TestGitCommand_GetCommits(t *testing.T) {
 			fields: fields{
 				PreviousTagGetter: nil,
 				CommitGetter: func(name string, arg ...string) (string, error) {
-					return `sha1;feat: JIR-1556 commit message
+					return `sha1;feat: JIR-1556 commit message==EOC==
 sha2;fix: JIR-9899 commit message`, nil
 				},
 			},

@@ -5,14 +5,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/hashicorp/go-retryablehttp"
-
 	"github.com/andygrunwald/go-jira"
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
 	pslog "github.com/psmarcin/jira-versioner/pkg/log"
 )
 
-// Jira has all necessary details for interacting with Jira service
+// Jira has all necessary details for interacting with Jira service.
 type Jira struct {
 	Client    *jira.Client
 	Project   *jira.Project
@@ -46,7 +45,7 @@ type Config struct {
 	HTTPMaxRetries int
 }
 
-// New creates Jira instance with all required details like email, Token, base url
+// New creates Jira instance with all required details like email, Token, base url.
 func New(config *Config) (Jira, error) {
 	j := Jira{
 		log:    config.Log,
@@ -81,7 +80,7 @@ func New(config *Config) (Jira, error) {
 	return j, nil
 }
 
-// getProject tries to find provided Jira project
+// getProject tries to find provided Jira project.
 func (j *Jira) getProject(projectID string) (jira.Project, error) {
 	j.log.Debugf("[JIRA] getting project id from slug: %s", projectID)
 	p, _, err := j.Client.Project.Get(projectID)
@@ -98,7 +97,7 @@ func (j *Jira) getProject(projectID string) (jira.Project, error) {
 	return *p, nil
 }
 
-// GetVersion looks for given version name if exists
+// GetVersion looks for given version name if exists.
 func (j Jira) GetVersion(name string) (*jira.Version, bool, error) {
 	for i := range j.Project.Versions {
 		if j.Project.Versions[i].Name == name {
@@ -109,7 +108,7 @@ func (j Jira) GetVersion(name string) (*jira.Version, bool, error) {
 	return &jira.Version{}, false, nil
 }
 
-// CreateVersion creates version in Jira
+// CreateVersion creates version in Jira.
 func (j *Jira) CreateVersion(name string) (*jira.Version, error) {
 	version, isFound, err := j.GetVersion(name)
 	if err != nil {
@@ -129,11 +128,13 @@ func (j *Jira) CreateVersion(name string) (*jira.Version, error) {
 		return &jira.Version{}, err
 	}
 
+	falseBool := new(bool)
+	*falseBool = false
 	v := &jira.Version{
 		Name:        name,
 		ProjectID:   projectID,
-		Archived:    false,
-		Released:    false,
+		Archived:    falseBool,
+		Released:    falseBool,
 		StartDate:   time.Now().String(),
 		ReleaseDate: time.Now().String(),
 		// TODO: put task ids into description
@@ -154,7 +155,7 @@ func (j *Jira) CreateVersion(name string) (*jira.Version, error) {
 	return version, nil
 }
 
-// LinkTasksToVersion iterates over all give tasks and tries to link them to version
+// LinkTasksToVersion iterates over all give tasks and tries to link them to version.
 func (j Jira) LinkTasksToVersion(taskIds []string) {
 	for _, taskID := range taskIds {
 		j.log.Debugf("[JIRA] linking %s to %s", taskID, j.Version.Name)
@@ -166,7 +167,7 @@ func (j Jira) LinkTasksToVersion(taskIds []string) {
 	}
 }
 
-// SetIssueVersion makes http request to Jira service to update task with fixed version
+// SetIssueVersion makes http request to Jira service to update task with fixed version.
 func (j Jira) SetIssueVersion(taskID string) error {
 	var res *jira.Response
 	p := UpdatePayload{
