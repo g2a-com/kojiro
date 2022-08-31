@@ -6,7 +6,7 @@ import (
 	"os/exec"
 )
 
-// Exec is just wrapper for exec.Command to easier mocking
+// Exec is just wrapper for exec.Command to easier mocking.
 func Exec(name string, args ...string) (string, error) {
 	c := exec.Command(name, args...)
 
