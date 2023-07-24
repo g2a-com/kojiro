@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/andygrunwald/go-jira"
+	pslog "github.com/g2a-com/gojiro/pkg/log"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
-	pslog "github.com/psmarcin/jira-versioner/pkg/log"
 )
 
 // Jira has all necessary details for interacting with Jira service.

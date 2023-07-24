@@ -3,7 +3,7 @@ package git
 import (
 	"testing"
 
-	"github.com/psmarcin/jira-versioner/pkg/cmd"
+	"github.com/g2a-com/gojiro/pkg/cmd"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 

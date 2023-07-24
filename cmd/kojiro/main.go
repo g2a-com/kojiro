@@ -1,28 +1,52 @@
 package main
 
 import (
-	"fmt"
+	"github.com/g2a-com/gojiro/pkg/git"
+	"github.com/g2a-com/gojiro/pkg/jira"
+	"github.com/g2a-com/gojiro/pkg/log"
+	"github.com/spf13/cobra"
 	"os"
 	"path/filepath"
-	"strconv"
-
-	"github.com/psmarcin/jira-versioner/pkg/git"
-	"github.com/psmarcin/jira-versioner/pkg/jira"
-	"github.com/spf13/cobra"
 
 	"go.uber.org/zap"
 )
 
-const defaultRetries = 3
+const (
+	defaultRetries     = 3
+	jiraVersionFlag    = "jira-version"
+	tagFlag            = " tag"
+	jiraEmailFlag      = "jira-email"
+	jiraTokenFlag      = "jira-token"
+	jiraProjectFlag    = "jira-project"
+	jiraBaseUrlFlag    = "jira-base-url"
+	jiraRetryTimesFlag = "jira-retry-times"
+	dirFlag            = "dir"
+	klioLoggerFlag     = "klio-logger"
+	dryRunFlag         = "dry-run"
+)
+
+type cojiroContext struct {
+	JiraVersion string
+	JiraEmail   string
+	JiraToken   string
+	JiraProject string
+	JiraBaseUrl string
+	JiraRetries int
+	Tag         string
+	Dir         string
+	DryRun      bool
+	KlioLogger  bool
+}
+
+var ctx cojiroContext
+var logger log.Logger
 
 func main() {
 	rootCmd := &cobra.Command{
 		Use:   "kojiro",
-		Short: "A simple version setter for Jira tasks since last version",
-		Long: `A solution for automatically create version, 
-link all issues from commits to newly created version. 
-All automatically.`,
-		Run: rootFunc,
+		Short: "A simple release setter for Jira tasks since last tag",
+		Long:  `Automatically create Jira release nad link all issues based commits. All automatically.`,
+		RunE:  rootFunc,
 	}
 	// get current directory path
 	ex, err := os.Executable()
@@ -31,134 +55,93 @@ All automatically.`,
 	}
 	pwd := filepath.Dir(ex)
 
-	rootCmd.Flags().StringP("jira-version", "v", "", "Version name for Jira")
-	rootCmd.Flags().StringP("tag", "t", "", "Existing git tag")
-	rootCmd.Flags().StringP("jira-email", "e", "", "Jira email")
-	rootCmd.Flags().StringP("jira-token", "k", "", "Jira token/key/password")
-	rootCmd.Flags().StringP("jira-project", "p", "", "Jira project, it has to be ID, example: 10003")
-	rootCmd.Flags().StringP("jira-base-url", "u", "", "Jira service base url, example: https://example.atlassian.net")
-	rootCmd.Flags().IntP("jira-retry-times", "r", defaultRetries, "Jira retry times for HTTP requests if failed")
-	rootCmd.Flags().StringP("dir", "d", pwd, "Absolute directory path to git repository")
-	_ = rootCmd.Flags().BoolP("dry-run", "", false, "Enable dry run mode")
+	ctx = cojiroContext{}
 
-	err = rootCmd.MarkFlagRequired("tag")
-	if err != nil {
-		fmt.Printf("err: %+v", err)
-		os.Exit(1)
-	}
-	err = rootCmd.MarkFlagRequired("jira-email")
-	if err != nil {
-		fmt.Printf("err: %+v", err)
-		os.Exit(1)
-	}
-	err = rootCmd.MarkFlagRequired("jira-token")
-	if err != nil {
-		fmt.Printf("err: %+v", err)
-		os.Exit(1)
-	}
-	err = rootCmd.MarkFlagRequired("jira-project")
-	if err != nil {
-		fmt.Printf("err: %+v", err)
-		os.Exit(1)
-	}
-	err = rootCmd.MarkFlagRequired("jira-base-url")
-	if err != nil {
-		fmt.Printf("err: %+v", err)
-		os.Exit(1)
-	}
+	rootCmd.Flags().StringVarP(&ctx.JiraVersion, jiraVersionFlag, "v", "", "Version name for Jira")
+	rootCmd.Flags().StringVarP(&ctx.Tag, tagFlag, "t", "", "Existing git tag")
+	rootCmd.Flags().StringVarP(&ctx.JiraEmail, jiraEmailFlag, "e", "", "Jira email")
+	rootCmd.Flags().StringVarP(&ctx.JiraToken, jiraTokenFlag, "k", "", "Jira token/key/password")
+	rootCmd.Flags().StringVarP(&ctx.JiraProject, jiraProjectFlag, "p", "", "Jira project, it has to be ID, example: 10003")
+	rootCmd.Flags().StringVarP(&ctx.JiraBaseUrl, jiraBaseUrlFlag, "u", "", "Jira service base url, example: https://example.atlassian.net")
+	rootCmd.Flags().IntVarP(&ctx.JiraRetries, jiraRetryTimesFlag, "r", defaultRetries, "Jira retry times for HTTP requests if failed")
+	rootCmd.Flags().StringVarP(&ctx.Dir, dirFlag, "d", pwd, "Absolute directory path to git repository")
+	rootCmd.Flags().BoolVarP(&ctx.KlioLogger, klioLoggerFlag, "l", true, "Use Klio-compliant logger, hard to read without using Klio")
+	rootCmd.Flags().BoolVarP(&ctx.DryRun, dryRunFlag, "", false, "Enable dry run mode")
+
+	_ = rootCmd.MarkFlagRequired(tagFlag)
+	_ = rootCmd.MarkFlagRequired(jiraEmailFlag)
+	_ = rootCmd.MarkFlagRequired(jiraTokenFlag)
+	_ = rootCmd.MarkFlagRequired(jiraProjectFlag)
+	_ = rootCmd.MarkFlagRequired(jiraBaseUrlFlag)
 
 	rootCmd.Example = "kojiro -e jira@example.com -k pa$$wor0 -p 10003 -t v1.1.0 -u https://example.atlassian.net"
 
 	if err = rootCmd.Execute(); err != nil {
-		fmt.Println(err)
 		os.Exit(1)
 	}
 }
 
-func rootFunc(c *cobra.Command, _ []string) {
-	log := zap.NewExample().Sugar()
-	dryRun := false
-	defer func() {
-		_ = log.Sync()
-	}()
+func rootFunc(c *cobra.Command, _ []string) error {
+	if ctx.KlioLogger {
 
-	tag := c.Flag("tag").Value.String()
+	} else {
+		zapLogger := zap.NewExample().Sugar()
 
-	version := c.Flag("jira-version").Value.String()
-	if version == "" {
-		version = tag
+		defer func() { _ = zapLogger.Sync() }()
+		logger = zapLogger
 	}
 
-	jiraEmail := c.Flag("jira-email").Value.String()
-	jiraToken := c.Flag("jira-token").Value.String()
-	jiraProject := c.Flag("jira-project").Value.String()
-	jiraBaseURL := c.Flag("jira-base-url").Value.String()
-	jiraRetryTimes := c.Flag("jira-retry-times").Value.String()
-	retryTimes, err := strconv.Atoi(jiraRetryTimes)
-	if err != nil {
-		log.Errorf("[JIRA-VERSIONER] error while parsing jira-retry-times param %+v", err)
-		defer exitWithError() //nolint
-		return
+	if ctx.JiraVersion == "" {
+		ctx.JiraVersion = ctx.Tag
 	}
-	dryRunRaw := c.Flag("dry-run").Value.String()
-	if dryRunRaw == "true" {
-		dryRun = true
-	}
-	gitDir := c.Flag("dir").Value.String()
 
-	log.Debugf(
-		"[JIRA-VERSIONER] starting with parameters: %+v",
+	logger.Debugf(
+		"starting with parameters: %+v",
 		map[string]interface{}{
-			"jiraEmail":      jiraEmail,
-			"jiraToken":      jiraToken,
-			"jiraProject":    jiraProject,
-			"jiraBaseURL":    jiraBaseURL,
-			"jiraRetryTimes": retryTimes,
-			"gitDir":         gitDir,
-			"tag":            tag,
-			"version":        version,
-			"dryRun":         dryRun,
+			"jiraEmail":      ctx.JiraEmail,
+			"jiraToken":      ctx.JiraToken,
+			"jiraProject":    ctx.JiraProject,
+			"jiraBaseURL":    ctx.JiraBaseUrl,
+			"jiraRetryTimes": ctx.JiraRetries,
+			"gitDir":         ctx.Dir,
+			"tag":            ctx.Tag,
+			"version":        ctx.JiraVersion,
+			"dryRun":         ctx.DryRun,
 		},
 	)
-	log.Infof("[JIRA-VERSIONER] git directory: %s", gitDir)
+	logger.Infof("[JIRA-VERSIONER] git directory: %s", ctx.Dir)
 
-	g := git.New(gitDir, log)
+	g := git.New(ctx.Dir, logger)
 
-	tasks, err := g.GetTasks(tag)
+	tasks, err := g.GetTasks(ctx.Tag)
 	if err != nil {
-		log.Errorf("[GIT] error while getting tasks since latest commit %+v", err)
-		defer exitWithError() //nolint
-		return
+		logger.Errorf("[GIT] error while getting tasks since latest commit %+v", err)
+		return err
 	}
 
 	jiraConfig := jira.Config{
-		Username:       jiraEmail,
-		Token:          jiraToken,
-		ProjectID:      jiraProject,
-		BaseURL:        jiraBaseURL,
-		Log:            log,
-		DryRun:         dryRun,
-		HTTPMaxRetries: retryTimes,
+		Username:       ctx.JiraEmail,
+		Token:          ctx.JiraToken,
+		ProjectID:      ctx.JiraProject,
+		BaseURL:        ctx.JiraBaseUrl,
+		Log:            logger,
+		DryRun:         ctx.DryRun,
+		HTTPMaxRetries: ctx.JiraRetries,
 	}
 	j, err := jira.New(&jiraConfig)
 	if err != nil {
-		log.Errorf("[VERSION] error while connecting to jira server %+v", err)
-		defer exitWithError() //nolint
-		return
+		logger.Errorf("[VERSION] error while connecting to jira server %+v", err)
+		return err
 	}
 
-	_, err = j.CreateVersion(version)
+	_, err = j.CreateVersion(ctx.JiraVersion)
 	if err != nil {
-		log.Errorf("[VERSION] error while creating version %+v", err)
-		defer exitWithError() //nolint
-		return
+		logger.Errorf("[VERSION] error while creating version %+v", err)
+		return err
 	}
 
 	j.LinkTasksToVersion(tasks)
 
-	log.Infof("[JIRA-VERSIONER] done ✅")
-}
-
-func exitWithError() {
-	os.Exit(1)
+	logger.Infof("[JIRA-VERSIONER] done")
+	return nil
 }
