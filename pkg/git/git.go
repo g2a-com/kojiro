@@ -3,8 +3,8 @@ package git
 import (
 	"regexp"
 
-	"github.com/psmarcin/jira-versioner/pkg/cmd"
-	pslog "github.com/psmarcin/jira-versioner/pkg/log"
+	"github.com/g2a-com/gojiro/pkg/cmd"
+	pslog "github.com/g2a-com/gojiro/pkg/log"
 )
 
 // Git keeps only dependencies.

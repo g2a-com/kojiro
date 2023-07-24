@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	pslog "github.com/psmarcin/jira-versioner/pkg/log"
+	pslog "github.com/g2a-com/gojiro/pkg/log"
 )
 
 const endOfCommit = "==EOC=="
